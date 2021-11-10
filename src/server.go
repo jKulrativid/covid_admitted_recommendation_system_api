@@ -10,12 +10,12 @@ func main() {
 
 	server := gin.Default()
 
-	server.GET("/image-classification/upload-xray-image", uploadXrayImage)
+	server.GET("/image-classification/upload-xray-image", uploadXrayImageHandler)
 
 	server.Run()
 }
 
-func uploadXrayImage(ctx *gin.Context) {
+func uploadXrayImageHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"result": "Admitted",
 	})
