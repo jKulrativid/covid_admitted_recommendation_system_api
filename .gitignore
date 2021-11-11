@@ -5,6 +5,20 @@
 *.so
 *.dylib
 
+# vscode config
+.vscode/
+
+# image file for testing
+*.png
+*.jpg
+*.jpeg
+
+# pytorch .pth file
+*.pth
+
+# virtual environment (Python)
+venv/
+
 # Test binary, built with `go test -c`
 *.test
 
