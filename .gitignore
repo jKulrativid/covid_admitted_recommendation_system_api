@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# vscode config
+.vscode/
+
 # image file for testing
 *.png
 *.jpg
