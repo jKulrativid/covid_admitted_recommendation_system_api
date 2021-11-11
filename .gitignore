@@ -5,6 +5,11 @@
 *.so
 *.dylib
 
+# image file for testing
+*.png
+*.jpg
+*.jpeg
+
 # pytorch .pth file
 *.pth
 
