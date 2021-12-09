@@ -15,9 +15,9 @@ func emptySuccessResponse(c *gin.Context) {
 	})
 }
 
-func UploadXrayImageTimeout() gin.HandlerFunc {
+func Timeout(t time.Duration) gin.HandlerFunc {
 	return timeout.New(
-		timeout.WithTimeout(200*time.Millisecond),
+		timeout.WithTimeout(t*time.Millisecond),
 		timeout.WithHandler(emptySuccessResponse),
 	)
 
