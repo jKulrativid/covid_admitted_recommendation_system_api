@@ -9,9 +9,9 @@ type ImageService struct {
 	imageRepo repositories.ImageRepository
 }
 
-func NewImageService(repo repositories.ImageRepository) *ImageService {
+func NewImageService(repo *repositories.ImageRepository) *ImageService {
 	return &ImageService{
-		imageRepo: repo,
+		imageRepo: *repo,
 	}
 }
 
