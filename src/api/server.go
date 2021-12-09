@@ -6,7 +6,7 @@ import (
 
 func main() {
 
-	server := routers.NewImageRouter()
+	server := routers.NewRouter()
 
 	server.Run(":8080")
 

@@ -10,9 +10,9 @@ type ImageHandler struct {
 	imageService services.ImageService
 }
 
-func NewImageHandler(service *services.ImageService) *ImageHandler {
+func NewImageHandler(service services.ImageService) *ImageHandler {
 	return &ImageHandler{
-		imageService: *service,
+		imageService: service,
 	}
 }
 

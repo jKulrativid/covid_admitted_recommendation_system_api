@@ -11,12 +11,12 @@ import (
 func NewRouter() *gin.Engine {
 
 	imageRepo := repositories.NewImageRepository()
-	imageService := services.NewImageService(imageRepo)
-	imageHandler := handlers.NewImageHandler(imageService)
+	imageService := services.NewImageService(*imageRepo)
+	imageHandler := handlers.NewImageHandler(*imageService)
 
 	userRepo := repositories.NewUserRepository()
-	userService := services.NewUserService(userRepo)
-	userHandler := handlers.NewUserHandler(userService)
+	userService := services.NewUserService(*userRepo)
+	userHandler := handlers.NewUserHandler(*userService)
 
 	r := gin.Default()
 	image := r.Group("/image")

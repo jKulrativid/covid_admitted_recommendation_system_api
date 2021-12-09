@@ -12,9 +12,9 @@ type UserHandler struct {
 	userService services.UserService
 }
 
-func NewUserHandler(service *services.UserService) *UserHandler {
+func NewUserHandler(service services.UserService) *UserHandler {
 	return &UserHandler{
-		userService: *service,
+		userService: service,
 	}
 }
 
@@ -27,12 +27,28 @@ func (handler *UserHandler) Register(ctx *gin.Context) {
 	err := handler.userService.Register(&newUser)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusConflict)
+
 	} else {
-		ctx.JSON(http.StatusOK, newUser)
+		ctx.JSON(http.StatusNoContent, gin.H{})
+
 	}
 }
 
 func (handler *UserHandler) SignIn(ctx *gin.Context) {
+	var newUser entities.User
+	if err := ctx.ShouldBind(&newUser); err != nil {
+		ctx.AbortWithStatus(http.StatusBadRequest)
+
+	}
+	jwtToken, err := handler.userService.SignIn(&newUser)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{
+			"token": jwtToken,
+		})
+	}
 
 }
 
