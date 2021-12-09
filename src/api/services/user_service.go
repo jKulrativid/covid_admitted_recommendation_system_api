@@ -18,13 +18,30 @@ func NewUserService(repo repositories.UserRepository) *UserService {
 func (service *UserService) Register(newUser *entities.User) error {
 	handleError := service.userRepo.Register(newUser)
 	return handleError
+
 }
 
 func (service *UserService) SignIn(newUser *entities.User) (string, error) {
-	if err := service.userRepo.Validate(newUser); err != nil {
+	if err := service.verifyUser(newUser); err != nil {
 		return "", err
 
 	}
 	return "JWT TOKEN", nil
+
+}
+
+func (service *UserService) SignOut(newUser *entities.User) error {
+	if err := service.verifyUser(newUser); err != nil {
+		return err
+
+	}
+	// deactivate user token here
+	return nil
+
+}
+
+func (service *UserService) verifyUser(newUser *entities.User) error {
+	// call gorm pulling data from database here
+	return nil
 
 }
