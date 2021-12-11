@@ -6,12 +6,14 @@ import (
 )
 
 type UserService struct {
-	userRepo repositories.UserRepository
+	userRepo     repositories.UserRepository
+	jwtTokenRepo repositories.JWTTokenRepository
 }
 
-func NewUserService(repo repositories.UserRepository) *UserService {
+func NewUserService(u repositories.UserRepository, jwt repositories.JWTTokenRepository) *UserService {
 	return &UserService{
-		userRepo: repo,
+		userRepo:     u,
+		jwtTokenRepo: jwt,
 	}
 }
 
@@ -42,7 +44,7 @@ func (service *UserService) SignOut(newUser *entities.User) error {
 }
 
 func (service *UserService) verifyUser(newUser *entities.User) error {
-	// call gorm pulling data from database here
+	// call userRepo to pull userdata from database here
 	return nil
 
 }
