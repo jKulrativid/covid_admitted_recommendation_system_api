@@ -6,14 +6,12 @@ import (
 )
 
 type UserService struct {
-	userRepo     repositories.UserRepository
-	jwtTokenRepo repositories.JWTTokenRepository
+	userRepo repositories.UserRepository
 }
 
-func NewUserService(u repositories.UserRepository, jwt repositories.JWTTokenRepository) *UserService {
+func NewUserService(u repositories.UserRepository) *UserService {
 	return &UserService{
-		userRepo:     u,
-		jwtTokenRepo: jwt,
+		userRepo: u,
 	}
 }
 
