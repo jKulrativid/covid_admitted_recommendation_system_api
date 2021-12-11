@@ -2,38 +2,23 @@ package repositories
 
 import (
 	"covid_admission_api/entities"
-	"log"
-	"os"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/jinzhu/gorm"
 )
 
 type UserRepository struct {
-	// implements gorm here
+	conn        *gorm.DB
 	redisClient *redis.Client
 }
 
-func NewUserRepository() *UserRepository {
+func NewUserRepository(cn *gorm.DB, rc *redis.Client) *UserRepository {
 	return &UserRepository{
-		redisClient: newRedisClient(),
+		conn:        cn,
+		redisClient: rc,
 	}
 }
 
 func (repo *UserRepository) Register(newUser *entities.User) error {
 	return nil
-}
-
-func newRedisClient() *redis.Client {
-	dsn := os.Getenv("REDIS_DSN")
-	if len(dsn) == 0 {
-		dsn = "localhost:6379"
-	}
-	client := redis.NewClient(&redis.Options{
-		Addr: dsn,
-	})
-	if _, err := client.Ping().Result(); err != nil {
-		log.Fatal("Crashed in JWTinitClient (jwt_token_repository.go) : Could Not Connect To Redis at ", dsn)
-	}
-	return client
-
 }
