@@ -3,8 +3,6 @@ package services
 import (
 	"log"
 	"os"
-
-	"github.com/dgrijalva/jwt-go"
 )
 
 type JWTService struct {
@@ -16,7 +14,7 @@ type JWTService struct {
 func NewJWTService(issuer string, expireSecond int64) *JWTService {
 	secret := os.Getenv("SECRET_JWT")
 	if secret == "" {
-		log.Fatal("Crashed in NewJWTService (package services) : No Environment Variable \"SECRET_JWT\" Given")
+		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"SECRET_JWT\" Given")
 	}
 	return &JWTService{
 		secret:       secret,
@@ -26,13 +24,11 @@ func NewJWTService(issuer string, expireSecond int64) *JWTService {
 }
 
 func (service *JWTService) GenerateToken(userID string) string {
-	atClaims := jwt.MapClaims{}
-	atClaims["userID"] = userID
 	return ""
 
 }
 
-func (service *JWTService) VerifyToken(jwtToken string) bool {
-	return false
+func (service *JWTService) VerifyToken(jwtToken string) error {
+	return nil
 
 }

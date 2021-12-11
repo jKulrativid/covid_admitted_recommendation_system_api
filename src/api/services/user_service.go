@@ -26,7 +26,8 @@ func (service *UserService) SignIn(newUser *entities.User) (string, error) {
 		return "", err
 
 	}
-	return "JWT TOKEN", nil
+	token := "JWT_TOKEN"
+	return token, nil
 
 }
 
