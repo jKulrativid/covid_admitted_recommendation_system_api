@@ -1,6 +1,7 @@
 package routers
 
 import (
+	databases "covid_admission_api/database"
 	"covid_admission_api/handlers"
 	"covid_admission_api/repositories"
 	"covid_admission_api/services"
@@ -14,7 +15,7 @@ func NewRouter() *gin.Engine {
 	imageService := services.NewImageService(*imageRepo)
 	imageHandler := handlers.NewImageHandler(*imageService)
 
-	userRepo := repositories.NewUserRepository()
+	userRepo := repositories.NewUserRepository(databases.DB, databases.RedisClient)
 	userService := services.NewUserService(*userRepo)
 	userHandler := handlers.NewUserHandler(*userService)
 

@@ -1,4 +1,4 @@
-package database
+package databases
 
 import (
 	"log"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-redis/redis/v7"
 )
+
+var RedisClient *redis.Client
 
 func NewRedisClient() *redis.Client {
 	dsn := os.Getenv("REDIS_DSN")
