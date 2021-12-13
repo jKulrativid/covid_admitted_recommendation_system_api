@@ -6,6 +6,7 @@ import (
 	"covid_admission_api/routers"
 	"log"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 )
 
