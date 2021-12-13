@@ -22,6 +22,7 @@ func (handler *UserHandler) Register(ctx *gin.Context) {
 	var newUser entities.User
 	if err := ctx.ShouldBind(&newUser); err != nil {
 		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
 
 	}
 	err := handler.userService.Register(&newUser)
