@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/twinj/uuid"
 )
 
@@ -66,7 +66,6 @@ func (service *JWTService) GenerateToken(userID uint64) (*TokenDetail, error) {
 		return nil, err
 
 	}
-
 	return td, nil
 
 }
