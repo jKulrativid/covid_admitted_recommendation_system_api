@@ -39,17 +39,18 @@ func (handler *UserHandler) SignIn(ctx *gin.Context) {
 	var newUser entities.User
 	if err := ctx.ShouldBind(&newUser); err != nil {
 		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
 
 	}
 	jwtToken, err := handler.userService.SignIn(&newUser)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
 
-	} else {
-		ctx.JSON(http.StatusOK, gin.H{
-			"token": jwtToken,
-		})
 	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"token": jwtToken,
+	})
 
 }
 
