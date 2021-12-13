@@ -11,13 +11,15 @@ import (
 
 func NewRouter() *gin.Engine {
 
+	jwtService := services.NewJWTService()
+
 	imageRepo := repositories.NewImageRepository() // TODO add conn field in ImageRepo
 	imageService := services.NewImageService(*imageRepo)
 	imageHandler := handlers.NewImageHandler(*imageService)
 
 	userRepo := repositories.NewUserRepository(databases.DB, databases.RedisClient)
 	userService := services.NewUserService(*userRepo)
-	userHandler := handlers.NewUserHandler(*userService)
+	userHandler := handlers.NewUserHandler(*userService, *jwtService)
 
 	r := gin.Default()
 	image := r.Group("/image")

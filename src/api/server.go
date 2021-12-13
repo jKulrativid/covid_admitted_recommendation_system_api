@@ -22,7 +22,11 @@ func main() {
 	defer databases.DB.Close()
 	databases.DB.AutoMigrate(&entities.User{})
 
-	databases.RedisClient = databases.NewRedisClient()
+	databases.RedisClient, err = databases.NewRedisClient()
+	if err != nil {
+		log.Fatal(err)
+
+	}
 
 	server := routers.NewRouter()
 

@@ -1,7 +1,6 @@
 package databases
 
 import (
-	"log"
 	"os"
 
 	"github.com/go-redis/redis/v7"
@@ -9,7 +8,7 @@ import (
 
 var RedisClient *redis.Client
 
-func NewRedisClient() *redis.Client {
+func NewRedisClient() (*redis.Client, error) {
 	dsn := os.Getenv("REDIS_DSN")
 	if len(dsn) == 0 {
 		dsn = "localhost:6379"
@@ -18,8 +17,9 @@ func NewRedisClient() *redis.Client {
 		Addr: dsn,
 	})
 	if _, err := client.Ping().Result(); err != nil {
-		log.Fatal("Crashed in JWTinitClient (jwt_token_repository.go) : Could Not Connect To Redis at ", dsn)
+		return nil, err
+
 	}
-	return client
+	return client, nil
 
 }

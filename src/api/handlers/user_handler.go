@@ -10,11 +10,13 @@ import (
 
 type UserHandler struct {
 	userService services.UserService
+	jwtService  services.JWTService
 }
 
-func NewUserHandler(service services.UserService) *UserHandler {
+func NewUserHandler(us services.UserService, js services.JWTService) *UserHandler {
 	return &UserHandler{
-		userService: service,
+		userService: us,
+		jwtService:  js,
 	}
 }
 
@@ -36,24 +38,36 @@ func (handler *UserHandler) Register(ctx *gin.Context) {
 }
 
 func (handler *UserHandler) SignIn(ctx *gin.Context) {
-	var newUser entities.User
-	if err := ctx.ShouldBind(&newUser); err != nil {
+	var user entities.User
+	if err := ctx.ShouldBind(&user); err != nil {
 		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
 
 	}
-	jwtToken, err := handler.userService.SignIn(&newUser)
-	if err != nil {
+	if err := handler.userService.SignIn(&user); err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 
 	}
+	ts, err := handler.jwtService.GenerateToken(user.UserId)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+
+	}
+	err = handler.userService.CreateAuth(user.UserId, ts)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+
+	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"token": jwtToken,
+		"access_token":  ts.AccessToken,
+		"refresh_token": ts.RefreshToken,
 	})
 
 }
 
 func (handler *UserHandler) SignOut(ctx *gin.Context) {
-
+	ctx.JSON(http.StatusOK, gin.H{})
 }

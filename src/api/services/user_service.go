@@ -3,6 +3,8 @@ package services
 import (
 	"covid_admission_api/entities"
 	"covid_admission_api/repositories"
+	"strconv"
+	"time"
 )
 
 type UserService struct {
@@ -33,6 +35,27 @@ func (service *UserService) SignIn(newUser *entities.User) error {
 func (service *UserService) SignOut(newUser *entities.User) error {
 	if err := service.verifyUser(newUser); err != nil {
 		return err
+
+	}
+	return nil
+
+}
+
+func (service *UserService) CreateAuth(userID uint64, td *TokenDetail) error {
+	at := time.Unix(td.AtExpires, 0)
+	rt := time.Unix(td.RtExpires, 0)
+	now := time.Now()
+
+	stringID := strconv.Itoa(int(userID))
+
+	errAccess := service.userRepo.AddTokenToClient(td.AccessToken, stringID, at.Sub(now))
+	if errAccess != nil {
+		return errAccess
+
+	}
+	errRefresh := service.userRepo.AddTokenToClient(td.RefreshToken, stringID, rt.Sub(now))
+	if errRefresh != nil {
+		return errRefresh
 
 	}
 	return nil
