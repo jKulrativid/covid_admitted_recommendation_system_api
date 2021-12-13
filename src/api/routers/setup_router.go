@@ -11,7 +11,7 @@ import (
 
 func NewRouter() *gin.Engine {
 
-	imageRepo := repositories.NewImageRepository()
+	imageRepo := repositories.NewImageRepository() // TODO add conn field in ImageRepo
 	imageService := services.NewImageService(*imageRepo)
 	imageHandler := handlers.NewImageHandler(*imageService)
 
