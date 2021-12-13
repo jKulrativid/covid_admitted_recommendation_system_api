@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"covid_admission_api/services"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,15 +17,10 @@ func NewImageHandler(service services.ImageService) *ImageHandler {
 }
 
 func (handler *ImageHandler) ListAllImages(ctx *gin.Context) {
-	token := 
-	
+
 }
 
-func (handler *ImageHandler) UplaodImage(ctx *gin.Context) {
-	imgFile, imgHeader, err := ctx.Request.FormFile("img")
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-	}
+func (handler *ImageHandler) UploadImage(ctx *gin.Context) {
 
 }
 
