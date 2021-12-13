@@ -21,13 +21,12 @@ func (service *UserService) Register(newUser *entities.User) error {
 
 }
 
-func (service *UserService) SignIn(newUser *entities.User) (string, error) {
+func (service *UserService) SignIn(newUser *entities.User) error {
 	if err := service.verifyUser(newUser); err != nil {
-		return "", err
+		return err
 
 	}
-	token := "JWT_TOKEN"
-	return token, nil
+	return nil
 
 }
 
@@ -36,7 +35,6 @@ func (service *UserService) SignOut(newUser *entities.User) error {
 		return err
 
 	}
-	// deactivate user token here
 	return nil
 
 }
