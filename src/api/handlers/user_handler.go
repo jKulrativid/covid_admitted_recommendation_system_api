@@ -28,11 +28,11 @@ func (handler *UserHandler) Register(ctx *gin.Context) {
 	err := handler.userService.Register(&newUser)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusConflict)
-
-	} else {
-		ctx.JSON(http.StatusNoContent, gin.H{})
+		return
 
 	}
+	ctx.JSON(http.StatusNoContent, gin.H{})
+
 }
 
 func (handler *UserHandler) SignIn(ctx *gin.Context) {
