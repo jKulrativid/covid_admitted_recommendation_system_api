@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# secret file
+secret.txt
+
 # vscode config
 .vscode/
 
