@@ -5,8 +5,8 @@
 *.so
 *.dylib
 
-# secret file
-secret.txt
+# sensitive file
+*.env
 
 # vscode config
 .vscode/
