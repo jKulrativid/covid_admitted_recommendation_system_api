@@ -7,6 +7,8 @@
 
 # sensitive file
 *.env
+# redis cache backup
+*.rdb
 
 # vscode config
 .vscode/
