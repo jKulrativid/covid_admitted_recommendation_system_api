@@ -5,8 +5,10 @@
 *.so
 *.dylib
 
-# secret file
-secret.txt
+# sensitive file
+*.env
+# redis cache backup
+*.rdb
 
 # vscode config
 .vscode/

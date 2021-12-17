@@ -21,7 +21,7 @@ func NewUserHandler(us services.UserService, js services.JWTService) *UserHandle
 }
 
 func (handler *UserHandler) Register(ctx *gin.Context) {
-	var newUser entities.User
+	var newUser entities.UserRegister
 	if err := ctx.ShouldBind(&newUser); err != nil {
 		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -38,36 +38,44 @@ func (handler *UserHandler) Register(ctx *gin.Context) {
 }
 
 func (handler *UserHandler) SignIn(ctx *gin.Context) {
-	var user entities.User
+	var user entities.UserSignIn
 	if err := ctx.ShouldBind(&user); err != nil {
-		ctx.AbortWithStatus(http.StatusBadRequest)
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
-
 	}
-	if err := handler.userService.SignIn(&user); err != nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+	userUuid, err := handler.userService.SignIn(&user)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"error": err.Error(),
+		})
 		return
-
 	}
-	ts, err := handler.jwtService.GenerateToken(user.UserId)
+	ts, err := handler.jwtService.GenerateToken(userUuid)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
-
 	}
-	err = handler.userService.CreateAuth(user.UserId, ts)
+	err = handler.userService.CreateAuth(userUuid, ts)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
-
 	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"access_token":  ts.AccessToken,
 		"refresh_token": ts.RefreshToken,
 	})
-
 }
 
 func (handler *UserHandler) SignOut(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (handler *UserHandler) RefreshToken(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (handler *UserHandler) UpdateUsername(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }

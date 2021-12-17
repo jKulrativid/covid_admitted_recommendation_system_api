@@ -19,10 +19,10 @@ type DBConfig struct {
 
 func BuildDBConfig() *DBConfig {
 	dbConfig := DBConfig{
-		Host:     "0:0:0:0",
+		Host:     "127.0.0.1",
 		Port:     3306,
-		User:     "root",
-		DBName:   "main",
+		User:     os.Getenv("DB_USERNAME"),
+		DBName:   os.Getenv("DB_NAME"),
 		Password: os.Getenv("DB_PASSWORD"),
 	}
 	return &dbConfig
@@ -38,4 +38,5 @@ func DbURL(dbConfig *DBConfig) string {
 		dbConfig.Port,
 		dbConfig.DBName,
 	)
+
 }

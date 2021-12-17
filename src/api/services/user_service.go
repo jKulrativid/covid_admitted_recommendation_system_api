@@ -3,8 +3,10 @@ package services
 import (
 	"covid_admission_api/entities"
 	"covid_admission_api/repositories"
-	"strconv"
+	"fmt"
 	"time"
+
+	"github.com/twinj/uuid"
 )
 
 type UserService struct {
@@ -17,53 +19,70 @@ func NewUserService(u repositories.UserRepository) *UserService {
 	}
 }
 
-func (service *UserService) Register(newUser *entities.User) error {
-	handleError := service.userRepo.Register(newUser)
+func (service *UserService) Register(newUser *entities.UserRegister) (handleError error) {
+	user := &entities.User{
+		Uuid:           uuid.NewV4().String(),
+		UserName:       newUser.UserName,
+		Email:          newUser.Email,
+		HashedPassword: newUser.Password,
+		Salt:           "123456lol",
+	}
+	handleError = service.userRepo.Register(user)
 	return handleError
 
 }
 
-func (service *UserService) SignIn(newUser *entities.User) error {
-	if err := service.verifyUser(newUser); err != nil {
-		return err
+func (service *UserService) SignIn(user *entities.UserSignIn) (uuid string, err error) {
+	if uuid, err = service.verifyUser(user); err != nil {
+		return "", err
 
 	}
-	return nil
+	return uuid, nil
 
 }
 
-func (service *UserService) SignOut(newUser *entities.User) error {
-	if err := service.verifyUser(newUser); err != nil {
-		return err
-
-	}
-	return nil
+func (service *UserService) SignOut(u *entities.User) (err error) {
+	err = nil
+	return err
 
 }
 
-func (service *UserService) CreateAuth(userID uint64, td *TokenDetail) error {
+func (service *UserService) CreateAuth(uuid string, td *TokenDetail) (err error) {
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	stringID := strconv.Itoa(int(userID))
+	stringID := uuid
 
-	errAccess := service.userRepo.AddTokenToClient(td.AccessToken, stringID, at.Sub(now))
-	if errAccess != nil {
-		return errAccess
-
+	err = service.userRepo.AddTokenToClient(td.AccessToken, stringID, at.Sub(now))
+	if err != nil {
+		return err
 	}
-	errRefresh := service.userRepo.AddTokenToClient(td.RefreshToken, stringID, rt.Sub(now))
-	if errRefresh != nil {
-		return errRefresh
-
+	err = service.userRepo.AddTokenToClient(td.RefreshToken, stringID, rt.Sub(now))
+	if err != nil {
+		return err
 	}
 	return nil
-
 }
 
-func (service *UserService) verifyUser(newUser *entities.User) error {
-	// call userRepo to pull userdata from database here
-	return nil
+func (service *UserService) FetchAuth(authD *AccessDetails) (string, error) {
+	uuid, err := service.userRepo.GetFromClient(authD.AccessUuid)
+	if err != nil {
+		return "", err
+	}
+	return uuid, nil
+}
 
+func (service *UserService) verifyUser(userSignIn *entities.UserSignIn) (uuid string, err error) {
+	// call userRepo to pull userdata from database here
+	var user entities.User
+	err = service.userRepo.PullUserData(&user, userSignIn.UserName)
+	if err != nil {
+		return "", fmt.Errorf("username not found")
+	}
+	// TODO hashed before check password
+	if user.HashedPassword != userSignIn.Password {
+		return "", fmt.Errorf("invalid username or password")
+	}
+	return user.Uuid, nil
 }
