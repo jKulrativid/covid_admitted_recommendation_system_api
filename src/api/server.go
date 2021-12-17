@@ -20,6 +20,7 @@ func main() {
 		log.Fatal(err)
 
 	}
+	// setup SQL DB
 	databases.DB, err = gorm.Open("mysql", databases.DbURL(databases.BuildDBConfig()))
 	if err != nil {
 		log.Fatal(err)
@@ -28,6 +29,7 @@ func main() {
 	defer databases.DB.Close()
 	databases.DB.AutoMigrate(&entities.User{})
 
+	// setup Redis Client
 	databases.RedisClient, err = databases.NewRedisClient()
 	if err != nil {
 		log.Fatal(err)
