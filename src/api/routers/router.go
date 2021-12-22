@@ -8,6 +8,7 @@ import (
 	"covid_admission_api/services"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
@@ -35,6 +36,7 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 		userEdit.POST("updata-username", userHandler.UpdateUsername)
 	}
 
+	r.Use(middleware.Logger())
 	r.Use(authMiddleware.Auth)
 
 	return r

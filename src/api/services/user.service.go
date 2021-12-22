@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/twinj/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -38,12 +39,12 @@ func NewUserService(r repositories.UserRepository) UserService {
 }
 
 func (u *userService) Register(newUser *entities.UserRegister) (handleError error) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	user := &entities.User{
 		Uuid:           uuid.NewV4().String(),
 		UserName:       newUser.UserName,
 		Email:          newUser.Email,
-		HashedPassword: newUser.Password,
-		Salt:           "123456lol",
+		HashedPassword: string(hashedPassword),
 	}
 	handleError = u.repo.Register(user)
 	return handleError
@@ -56,18 +57,16 @@ func (u *userService) SignIn(userSignIn *entities.UserSignIn) (uuid string, err 
 	if err != nil {
 		return "", fmt.Errorf("username not found")
 	}
-	// TODO hashed before check password
-	if user.HashedPassword != userSignIn.Password {
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password))
+	if err != nil {
 		return "", fmt.Errorf("invalid username or password")
 	}
 	return uuid, nil
-
 }
 
 func (u *userService) SignOut(user *entities.User) (err error) {
 	err = nil
 	return err
-
 }
 
 func (u *userService) GenerateToken(userUuid string) (td *TokenDetail, err error) {
