@@ -3,7 +3,7 @@ package middlewares
 import (
 	"covid_admission_api/services"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type AuthMiddleware interface {
