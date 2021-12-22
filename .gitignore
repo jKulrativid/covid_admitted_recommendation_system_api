@@ -5,7 +5,7 @@
 *.so
 *.dylib
 
-# sensitive file
+# env file
 *.env
 # redis cache backup
 *.rdb
