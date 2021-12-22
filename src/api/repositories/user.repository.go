@@ -9,8 +9,7 @@ import (
 type UserRepository interface {
 	RegisterNewUser(newUser *entities.User) error
 	GetUserFromUserName(user *entities.User, userName string) error
-	GetFromClient(accessUuid string) (string, error)
-	AddTokenToClient(accessDetail, stringId string, exp time.Duration) error
+	SetToRedis(key, val string, exp time.Duration) error
 }
 
 type userRepository struct {
@@ -41,10 +40,6 @@ func (u *userRepository) GetUserFromUserName(user *entities.User, userName strin
 	return nil
 }
 
-func (u *userRepository) GetFromClient(accessUuid string) (string, error) {
-	return "", nil
-}
-
-func (u *userRepository) AddTokenToClient(accessDetail, stringId string, exp time.Duration) error {
-	return nil
+func (u *userRepository) SetToRedis(key, val string, exp time.Duration) error {
+	return u.redis.Set(key, val, exp)
 }

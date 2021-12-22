@@ -105,11 +105,11 @@ func (u *userService) CreateAuth(uuid string, td *TokenDetail) (err error) {
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err = u.repo.AddTokenToClient(td.AccessToken, uuid, at.Sub(now))
+	err = u.repo.SetToRedis(td.AccessToken, uuid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.AddTokenToClient(td.RefreshToken, uuid, rt.Sub(now))
+	err = u.repo.SetToRedis(td.RefreshToken, uuid, rt.Sub(now))
 	if err != nil {
 		return err
 	}
