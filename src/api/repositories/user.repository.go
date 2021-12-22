@@ -7,8 +7,8 @@ import (
 )
 
 type UserRepository interface {
-	Register(newUser *entities.User) (err error)
-	PullUserData(user *entities.User, userName string) (err error)
+	RegisterNewUser(newUser *entities.User) error
+	GetUserFromUserName(user *entities.User, userName string) error
 	GetFromClient(accessUuid string) (string, error)
 	AddTokenToClient(accessDetail, stringId string, exp time.Duration) error
 }
@@ -25,17 +25,17 @@ func NewUserRepository(db database.Database, rs database.RedisClient) UserReposi
 	}
 }
 
-func (u *userRepository) Register(newUser *entities.User) (err error) {
+func (u *userRepository) RegisterNewUser(newUser *entities.User) error {
 	db := u.database.GetConnection()
-	if err = db.Create(newUser).Error; err != nil {
+	if err := db.Create(newUser).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *userRepository) PullUserData(user *entities.User, userName string) (err error) {
+func (u *userRepository) GetUserFromUserName(user *entities.User, userName string) error {
 	db := u.database.GetConnection()
-	if err = db.Where("user_name = ?", userName).First(user).Error; err != nil {
+	if err := db.Where("user_name = ?", userName).First(user).Error; err != nil {
 		return err
 	}
 	return nil

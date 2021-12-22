@@ -46,14 +46,14 @@ func (u *userService) Register(newUser *entities.UserRegister) (handleError erro
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	handleError = u.repo.Register(user)
+	handleError = u.repo.RegisterNewUser(user)
 	return handleError
 
 }
 
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (uuid string, err error) {
 	var user entities.User
-	err = u.repo.PullUserData(&user, userSignIn.UserName)
+	err = u.repo.GetUserFromUserName(&user, userSignIn.UserName)
 	if err != nil {
 		return "", fmt.Errorf("username not found")
 	}
