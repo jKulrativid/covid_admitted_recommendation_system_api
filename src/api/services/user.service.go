@@ -116,11 +116,3 @@ func (u *userService) CreateAuth(uuid string, td *TokenDetail) (err error) {
 	}
 	return nil
 }
-
-func (u *userService) FetchAuth(authD *AccessDetails) (string, error) {
-	uuid, err := u.repo.GetFromClient(authD.AccessUuid)
-	if err != nil {
-		return "", err
-	}
-	return uuid, nil
-}

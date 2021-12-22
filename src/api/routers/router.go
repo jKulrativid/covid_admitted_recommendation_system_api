@@ -12,7 +12,8 @@ import (
 
 func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 
-	authService := services.NewAuthService(rs)
+	authRepo := repositories.NewAuthRepo(rs)
+	authService := services.NewAuthService(authRepo)
 	authMiddleware := middlewares.NewAuthMiddleware(authService)
 
 	userRepo := repositories.NewUserRepository(db, rs)

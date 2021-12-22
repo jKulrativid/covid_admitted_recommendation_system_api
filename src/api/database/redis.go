@@ -2,13 +2,14 @@ package database
 
 import (
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 )
 
 type RedisClient interface {
-	Get()
-	Set()
+	Get(key string) (string, error)
+	Set(key, val string, exp time.Duration) error
 }
 
 type redisClient struct {
@@ -31,10 +32,10 @@ func NewRedisClient() (RedisClient, error) {
 
 }
 
-func (r *redisClient) Get() {
-
+func (r *redisClient) Get(key string) (string, error) {
+	return "", nil
 }
 
-func (r *redisClient) Set() {
-
+func (r *redisClient) Set(key, val string, exp time.Duration) error {
+	return nil
 }

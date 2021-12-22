@@ -1,7 +1,7 @@
 package services
 
 import (
-	"covid_admission_api/database"
+	"covid_admission_api/repositories"
 	"fmt"
 	"log"
 	"os"
@@ -14,10 +14,11 @@ type AuthService interface {
 	VerifyToken(jwtToken string) (*jwt.Token, error)
 	TokenValid(jwtToken string) error
 	ExtractMetadata(jwtToken string) (*AccessDetails, error)
+	FetchAuth(authD *AccessDetails) (string, error)
 }
 
 type authService struct {
-	redis    database.RedisClient
+	repo     repositories.AuthRepo
 	atSecret string
 	rtSecret string
 }
@@ -36,16 +37,16 @@ type AccessDetails struct {
 	UserUuid   string
 }
 
-func NewAuthService(rs database.RedisClient) AuthService {
-	ass := os.Getenv("ACCESS_JWT_SECRET")
-	rfs := os.Getenv("REFRESH_JWT_SECRET")
-	if ass == "" || rfs == "" {
+func NewAuthService(r repositories.AuthRepo) AuthService {
+	as := os.Getenv("ACCESS_JWT_SECRET")
+	rs := os.Getenv("REFRESH_JWT_SECRET")
+	if as == "" || rs == "" {
 		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
 	}
 	return &authService{
-		redis:    rs,
-		atSecret: ass,
-		rtSecret: rfs,
+		repo:     r,
+		atSecret: as,
+		rtSecret: rs,
 	}
 }
 
@@ -104,4 +105,12 @@ func (a *authService) ExtractMetadata(jwtToken string) (*AccessDetails, error) {
 		}, nil
 	}
 	return nil, err
+}
+
+func (a *authService) FetchAuth(authD *AccessDetails) (string, error) {
+	uuid, err := a.repo.GetFromClient(authD.AccessUuid)
+	if err != nil {
+		return "", err
+	}
+	return uuid, nil
 }
