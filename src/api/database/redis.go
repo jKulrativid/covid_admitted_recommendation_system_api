@@ -33,9 +33,10 @@ func NewRedisClient() (RedisClient, error) {
 }
 
 func (r *redisClient) Get(key string) (string, error) {
-	return "", nil
+	result := r.client.Get(key)
+	return result.String(), result.Err()
 }
 
 func (r *redisClient) Set(key, val string, exp time.Duration) error {
-	return nil
+	return r.client.Set(key, val, exp).Err()
 }

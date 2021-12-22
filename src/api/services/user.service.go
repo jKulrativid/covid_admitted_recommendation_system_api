@@ -38,16 +38,19 @@ func NewUserService(r repositories.UserRepository) UserService {
 	}
 }
 
-func (u *userService) Register(newUser *entities.UserRegister) (handleError error) {
+func (u *userService) Register(newUser *entities.UserRegister) error {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	user := &entities.User{
-		Uuid:           uuid.NewV4().String(),
+		Uid:            uuid.NewV4().String(),
 		UserName:       newUser.UserName,
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	handleError = u.repo.RegisterNewUser(user)
-	return handleError
+	err := u.repo.CreateNewUser(user)
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
