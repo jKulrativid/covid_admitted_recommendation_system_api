@@ -54,8 +54,9 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 
 }
 
-func (u *userService) SignIn(userSignIn *entities.UserSignIn) (uuid string, err error) {
+func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
 	var user entities.User
+	var err error
 	err = u.repo.GetUserFromUserName(&user, userSignIn.UserName)
 	if err != nil {
 		return "", fmt.Errorf("username not found")
@@ -64,7 +65,7 @@ func (u *userService) SignIn(userSignIn *entities.UserSignIn) (uuid string, err 
 	if err != nil {
 		return "", fmt.Errorf("invalid username or password")
 	}
-	return uuid, nil
+	return user.Uid, nil
 }
 
 func (u *userService) SignOut(user *entities.User) (err error) {
