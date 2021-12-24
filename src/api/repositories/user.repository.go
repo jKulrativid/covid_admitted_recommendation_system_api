@@ -28,7 +28,7 @@ func NewUserRepository(db database.Database, rs database.RedisClient) UserReposi
 func (u *userRepository) CreateNewUser(newUser *entities.User) error {
 	db := u.database.GetConnection()
 	if err := db.Create(newUser).Error; err != nil {
-		return err
+		return entities.ErrorConflict
 	}
 	return nil
 }

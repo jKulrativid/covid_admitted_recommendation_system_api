@@ -14,11 +14,11 @@ import (
 )
 
 type UserService interface {
-	Register(newUser *entities.UserRegister) (handleError error)
-	SignIn(user *entities.UserSignIn) (uuid string, err error)
-	SignOut(user *entities.User) (err error)
-	GenerateToken(userUuid string) (td *TokenDetail, err error)
-	CreateAuth(uuid string, td *TokenDetail) (err error)
+	Register(newUser *entities.UserRegister) error
+	SignIn(user *entities.UserSignIn) (string, error)
+	SignOut(user *entities.User) error
+	GenerateToken(userUuid string) (*TokenDetail, error)
+	CreateAuth(uuid string, td *TokenDetail) error
 }
 
 type userService struct {
@@ -31,7 +31,7 @@ func NewUserService(r repositories.UserRepository) UserService {
 	ass := os.Getenv("ACCESS_JWT_SECRET")
 	rfs := os.Getenv("REFRESH_JWT_SECRET")
 	if ass == "" || rfs == "" {
-		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+		log.Fatal("Crashed in NewUserService (user.service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
 	}
 	return &userService{
 		repo: r,
@@ -46,12 +46,7 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	err := u.repo.CreateNewUser(user)
-	if err != nil {
-		return err
-	}
-	return nil
-
+	return u.repo.CreateNewUser(user)
 }
 
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
@@ -73,8 +68,10 @@ func (u *userService) SignOut(user *entities.User) (err error) {
 	return err
 }
 
-func (u *userService) GenerateToken(userUuid string) (td *TokenDetail, err error) {
-	td = &TokenDetail{}
+func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
+	td := &TokenDetail{}
+	var err error
+
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
 
@@ -104,12 +101,12 @@ func (u *userService) GenerateToken(userUuid string) (td *TokenDetail, err error
 	return td, nil
 }
 
-func (u *userService) CreateAuth(uuid string, td *TokenDetail) (err error) {
+func (u *userService) CreateAuth(uuid string, td *TokenDetail) error {
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err = u.repo.SetToRedis(td.AccessToken, uuid, at.Sub(now))
+	err := u.repo.SetToRedis(td.AccessToken, uuid, at.Sub(now))
 	if err != nil {
 		return err
 	}

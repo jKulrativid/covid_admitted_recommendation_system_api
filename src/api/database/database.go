@@ -19,7 +19,7 @@ type database struct {
 	db *gorm.DB
 }
 
-func InitDataBase() (Database, error) {
+func NewDatabase() (Database, error) {
 	fmt.Println("Initializing database...")
 	host := os.Getenv("DB_HOST")
 	if host == "" {
