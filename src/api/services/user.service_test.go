@@ -15,6 +15,7 @@ func TestRegister(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer db.Close()
 	rs, err := database.NewMockRedisClient()
 	if err != nil {
 		t.Fatal(err)
@@ -22,7 +23,7 @@ func TestRegister(t *testing.T) {
 	userRepo := repositories.NewUserRepository(db, rs)
 	userService := NewUserService(userRepo)
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("normal register", func(t *testing.T) {
 		var err error
 		user := &entities.UserRegister{
 			UserName: "Foo Bar",
@@ -32,11 +33,11 @@ func TestRegister(t *testing.T) {
 		err = userService.Register(user)
 		assert.NoError(t, err)
 	})
-	t.Run("duplicate failure", func(t *testing.T) {
+	t.Run("duplicate register", func(t *testing.T) {
 		var err error
 		user := &entities.UserRegister{
-			UserName: "Foo Bar",
-			Email:    "foobar@gmail.com",
+			UserName: "Zinovacz Zell",
+			Email:    "vaccine@gmail.com",
 			Password: "123456789",
 		}
 		err = userService.Register(user)

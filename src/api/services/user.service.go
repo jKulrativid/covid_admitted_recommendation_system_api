@@ -3,7 +3,6 @@ package services
 import (
 	"covid_admission_api/entities"
 	"covid_admission_api/repositories"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -18,7 +17,8 @@ type UserService interface {
 	SignIn(user *entities.UserSignIn) (string, error)
 	SignOut(user *entities.User) error
 	GenerateToken(userUuid string) (*TokenDetail, error)
-	CreateAuth(uuid string, td *TokenDetail) error
+	CreateAuth(uid string, td *TokenDetail) error
+	userExist(userName, email string) bool
 }
 
 type userService struct {
@@ -38,7 +38,20 @@ func NewUserService(r repositories.UserRepository) UserService {
 	}
 }
 
+func (u *userService) userExist(userName, email string) bool {
+	if err := u.repo.GetUserFromEmail(&entities.User{}, email); err == nil {
+		return true
+	}
+	if err := u.repo.GetUserFromUserName(&entities.User{}, userName); err == nil {
+		return true
+	}
+	return false
+}
+
 func (u *userService) Register(newUser *entities.UserRegister) error {
+	if u.userExist(newUser.UserName, newUser.Email) {
+		return entities.ErrorConflict
+	}
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	user := &entities.User{
 		Uid:            uuid.NewV4().String(),
@@ -51,14 +64,11 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
 	var user entities.User
-	var err error
-	err = u.repo.GetUserFromUserName(&user, userSignIn.UserName)
-	if err != nil {
-		return "", fmt.Errorf("username not found")
+	if err := u.repo.GetUserFromUserName(&user, userSignIn.UserName); err != nil {
+		return "", entities.ErrorNotAuthorized
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password))
-	if err != nil {
-		return "", fmt.Errorf("invalid username or password")
+	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password)); err != nil {
+		return "", entities.ErrorNotAuthorized
 	}
 	return user.Uid, nil
 }
@@ -101,16 +111,16 @@ func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
 	return td, nil
 }
 
-func (u *userService) CreateAuth(uuid string, td *TokenDetail) error {
+func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err := u.repo.SetToRedis(td.AccessToken, uuid, at.Sub(now))
+	err := u.repo.SetToRedis(td.AccessToken, uid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.SetToRedis(td.RefreshToken, uuid, rt.Sub(now))
+	err = u.repo.SetToRedis(td.RefreshToken, uid, rt.Sub(now))
 	if err != nil {
 		return err
 	}

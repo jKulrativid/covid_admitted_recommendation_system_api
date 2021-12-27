@@ -7,11 +7,15 @@ import (
 )
 
 func NewMockDatabase() (Database, sqlmock.Sqlmock, error) {
-	sqlDB, mock, err := sqlmock.New()
+	// change QueryMatcher for gORM
+	sqlDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
 		return nil, nil, err
 	}
-	db, err := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{})
+	db, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      sqlDB,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
 	if err != nil {
 		return nil, nil, err
 	}

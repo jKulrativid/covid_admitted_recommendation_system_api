@@ -29,10 +29,10 @@ func NewUserHandler(us services.UserService) UserHandler {
 func (h *userHandler) Register(c echo.Context) error {
 	var newUser entities.UserRegister
 	if err := c.Bind(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
 	}
 	if err := c.Validate(&newUser); err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
