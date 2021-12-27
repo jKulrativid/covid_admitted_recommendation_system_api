@@ -14,6 +14,7 @@ type UserHandler interface {
 	SignOut(c echo.Context) error
 	RefreshToken(c echo.Context) error
 	UpdateUsername(c echo.Context) error
+	ChangePassword(c echo.Context) error
 }
 
 type userHandler struct {
@@ -32,7 +33,7 @@ func (h *userHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
 	}
 	if err := c.Validate(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
@@ -44,22 +45,22 @@ func (h *userHandler) Register(c echo.Context) error {
 func (h *userHandler) SignIn(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
 	}
 	if err := c.Validate(&user); err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
 	}
 	userUuid, err := h.service.SignIn(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+		return echo.NewHTTPError(http.StatusUnauthorized, entities.ErrorNotAuthorized)
 	}
 	ts, err := h.service.GenerateToken(userUuid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
 	}
 	err = h.service.CreateAuth(userUuid, ts)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
 	}
 	return c.JSON(http.StatusOK, map[string]string{
 		"access_token":  ts.AccessToken,
@@ -76,5 +77,9 @@ func (h *userHandler) RefreshToken(c echo.Context) error {
 }
 
 func (h *userHandler) UpdateUsername(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]string{})
+}
+
+func (h *userHandler) ChangePassword(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{})
 }
