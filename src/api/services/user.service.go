@@ -3,7 +3,6 @@ package services
 import (
 	"covid_admission_api/entities"
 	"covid_admission_api/repositories"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -14,11 +13,13 @@ import (
 )
 
 type UserService interface {
-	Register(newUser *entities.UserRegister) (handleError error)
-	SignIn(user *entities.UserSignIn) (uuid string, err error)
-	SignOut(user *entities.User) (err error)
-	GenerateToken(userUuid string) (td *TokenDetail, err error)
-	CreateAuth(uuid string, td *TokenDetail) (err error)
+	Register(newUser *entities.UserRegister) error
+	SignIn(user *entities.UserSignIn) (string, error)
+	SignOut(user *entities.UserSignIn) (string, error)
+	GenerateToken(userUuid string) (*TokenDetail, error)
+	CreateAuth(uid string, td *TokenDetail) error
+	DeleteAuth(uid string) error
+	userExist(userName, email string) bool
 }
 
 type userService struct {
@@ -31,46 +32,63 @@ func NewUserService(r repositories.UserRepository) UserService {
 	ass := os.Getenv("ACCESS_JWT_SECRET")
 	rfs := os.Getenv("REFRESH_JWT_SECRET")
 	if ass == "" || rfs == "" {
-		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+		log.Fatal("Crashed in NewUserService (user.service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
 	}
 	return &userService{
 		repo: r,
 	}
 }
 
-func (u *userService) Register(newUser *entities.UserRegister) (handleError error) {
+func (u *userService) userExist(userName, email string) bool {
+	if err := u.repo.GetUserFromEmail(&entities.User{}, email); err == nil {
+		return true
+	}
+	if err := u.repo.GetUserFromUserName(&entities.User{}, userName); err == nil {
+		return true
+	}
+	return false
+}
+
+func (u *userService) Register(newUser *entities.UserRegister) error {
+	if u.userExist(newUser.UserName, newUser.Email) {
+		return entities.ErrorConflict
+	}
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	user := &entities.User{
-		Uuid:           uuid.NewV4().String(),
+		Uid:            uuid.NewV4().String(),
 		UserName:       newUser.UserName,
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	handleError = u.repo.Register(user)
-	return handleError
-
+	return u.repo.CreateNewUser(user)
 }
 
-func (u *userService) SignIn(userSignIn *entities.UserSignIn) (uuid string, err error) {
+func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
 	var user entities.User
-	err = u.repo.PullUserData(&user, userSignIn.UserName)
-	if err != nil {
-		return "", fmt.Errorf("username not found")
+	if err := u.repo.GetUserFromUserName(&user, userSignIn.UserName); err != nil {
+		return "", entities.ErrorUnAuthorized
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password))
-	if err != nil {
-		return "", fmt.Errorf("invalid username or password")
+	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password)); err != nil {
+		return "", entities.ErrorUnAuthorized
 	}
-	return uuid, nil
+	return user.Uid, nil
 }
 
-func (u *userService) SignOut(user *entities.User) (err error) {
-	err = nil
-	return err
+func (u *userService) SignOut(userSignIn *entities.UserSignIn) (string, error) {
+	var user entities.User
+	if err := u.repo.GetUserFromUserName(&user, userSignIn.UserName); err != nil {
+		return "", entities.ErrorUnAuthorized
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password)); err != nil {
+		return "", entities.ErrorUnAuthorized
+	}
+	return user.Uid, nil
 }
 
-func (u *userService) GenerateToken(userUuid string) (td *TokenDetail, err error) {
-	td = &TokenDetail{}
+func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
+	td := &TokenDetail{}
+	var err error
+
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
 
@@ -100,18 +118,22 @@ func (u *userService) GenerateToken(userUuid string) (td *TokenDetail, err error
 	return td, nil
 }
 
-func (u *userService) CreateAuth(uuid string, td *TokenDetail) (err error) {
+func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err = u.repo.AddTokenToClient(td.AccessToken, uuid, at.Sub(now))
+	err := u.repo.SaveJWT(td.AccessToken, uid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.AddTokenToClient(td.RefreshToken, uuid, rt.Sub(now))
+	err = u.repo.SaveJWT(td.RefreshToken, uid, rt.Sub(now))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (u *userService) DeleteAuth(uid string) error {
+	return u.repo.DeleteJWT(uid)
 }

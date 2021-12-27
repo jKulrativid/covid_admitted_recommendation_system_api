@@ -26,18 +26,18 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 		cookie, err := c.Cookie("token")
 		c.Set("isAuth", false) // always set isAuth false before authentication
 		if err != nil {
-			next(c)
+			return next(c)
 		}
 		accessDetail, err := a.service.ExtractMetadata(cookie.Value)
 		if err != nil {
-			next(c)
+			return next(c)
 		}
 		uid, err := a.service.FetchAuth(accessDetail)
 		if err != nil {
-			next(c)
+			return next(c)
 		}
 		c.Set("isAuth", true)
 		c.Set("uid", uid)
-		return nil
+		return next(c)
 	}
 }

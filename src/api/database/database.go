@@ -1,6 +1,7 @@
 package database
 
 import (
+	"covid_admission_api/entities"
 	"fmt"
 	"os"
 
@@ -18,7 +19,7 @@ type database struct {
 	db *gorm.DB
 }
 
-func InitDataBase() (Database, error) {
+func NewDatabase() (Database, error) {
 	fmt.Println("Initializing database...")
 	host := os.Getenv("DB_HOST")
 	if host == "" {
@@ -55,7 +56,7 @@ func (d *database) GetConnection() *gorm.DB {
 }
 
 func (d *database) AutoMigrate() error {
-	return nil
+	return d.db.AutoMigrate(&entities.User{})
 }
 
 func (d *database) Close() {

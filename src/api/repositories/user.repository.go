@@ -7,10 +7,11 @@ import (
 )
 
 type UserRepository interface {
-	Register(newUser *entities.User) (err error)
-	PullUserData(user *entities.User, userName string) (err error)
-	GetFromClient(accessUuid string) (string, error)
-	AddTokenToClient(accessDetail, stringId string, exp time.Duration) error
+	CreateNewUser(newUser *entities.User) error
+	GetUserFromUserName(user *entities.User, userName string) error
+	GetUserFromEmail(user *entities.User, email string) error
+	SaveJWT(key, val string, exp time.Duration) error
+	DeleteJWT(key string) error
 }
 
 type userRepository struct {
@@ -25,26 +26,35 @@ func NewUserRepository(db database.Database, rs database.RedisClient) UserReposi
 	}
 }
 
-func (u *userRepository) Register(newUser *entities.User) (err error) {
+func (u *userRepository) CreateNewUser(newUser *entities.User) error {
 	db := u.database.GetConnection()
-	if err = db.Create(newUser).Error; err != nil {
+	if err := db.Create(newUser).Error; err != nil {
+		return err
+		// return entities.ErrorConflict
+	}
+	return nil
+}
+
+func (u *userRepository) GetUserFromUserName(user *entities.User, userName string) error {
+	db := u.database.GetConnection()
+	if err := db.Where("user_name = ?", userName).First(user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *userRepository) PullUserData(user *entities.User, userName string) (err error) {
+func (u *userRepository) GetUserFromEmail(user *entities.User, email string) error {
 	db := u.database.GetConnection()
-	if err = db.Where("user_name = ?", userName).First(user).Error; err != nil {
+	if err := db.Find("email = ?", email).First(user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *userRepository) GetFromClient(accessUuid string) (string, error) {
-	return "", nil
+func (u *userRepository) SaveJWT(key, val string, exp time.Duration) error {
+	return u.redis.Set(key, val, exp)
 }
 
-func (u *userRepository) AddTokenToClient(accessDetail, stringId string, exp time.Duration) error {
-	return nil
+func (u *userRepository) DeleteJWT(key string) error {
+	return u.redis.Del(key)
 }

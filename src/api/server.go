@@ -19,7 +19,7 @@ func main() {
 
 	}
 	// setup SQL DB
-	db, err := database.InitDataBase()
+	db, err := database.NewDatabase()
 	if err != nil {
 		log.Fatal(err)
 

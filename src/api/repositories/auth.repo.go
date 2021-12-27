@@ -7,15 +7,15 @@ type AuthRepo interface {
 }
 
 type authRepo struct {
-	client database.RedisClient
+	redis database.RedisClient
 }
 
 func NewAuthRepo(rs database.RedisClient) AuthRepo {
 	return &authRepo{
-		client: rs,
+		redis: rs,
 	}
 }
 
 func (a *authRepo) GetFromClient(key string) (string, error) {
-	return a.client.Get(key)
+	return a.redis.Get(key)
 }
