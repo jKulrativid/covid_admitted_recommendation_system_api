@@ -10,7 +10,8 @@ type UserRepository interface {
 	CreateNewUser(newUser *entities.User) error
 	GetUserFromUserName(user *entities.User, userName string) error
 	GetUserFromEmail(user *entities.User, email string) error
-	SetToRedis(key, val string, exp time.Duration) error
+	SaveJWT(key, val string, exp time.Duration) error
+	DeleteJWT(key string) error
 }
 
 type userRepository struct {
@@ -50,6 +51,10 @@ func (u *userRepository) GetUserFromEmail(user *entities.User, email string) err
 	return nil
 }
 
-func (u *userRepository) SetToRedis(key, val string, exp time.Duration) error {
+func (u *userRepository) SaveJWT(key, val string, exp time.Duration) error {
 	return u.redis.Set(key, val, exp)
+}
+
+func (u *userRepository) DeleteJWT(key string) error {
+	return u.redis.Del(key)
 }

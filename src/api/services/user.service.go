@@ -15,9 +15,10 @@ import (
 type UserService interface {
 	Register(newUser *entities.UserRegister) error
 	SignIn(user *entities.UserSignIn) (string, error)
-	SignOut(user *entities.User) error
+	SignOut(user *entities.UserSignIn) (string, error)
 	GenerateToken(userUuid string) (*TokenDetail, error)
 	CreateAuth(uid string, td *TokenDetail) error
+	DeleteAuth(uid string) error
 	userExist(userName, email string) bool
 }
 
@@ -65,17 +66,23 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
 	var user entities.User
 	if err := u.repo.GetUserFromUserName(&user, userSignIn.UserName); err != nil {
-		return "", entities.ErrorNotAuthorized
+		return "", entities.ErrorUnAuthorized
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password)); err != nil {
-		return "", entities.ErrorNotAuthorized
+		return "", entities.ErrorUnAuthorized
 	}
 	return user.Uid, nil
 }
 
-func (u *userService) SignOut(user *entities.User) (err error) {
-	err = nil
-	return err
+func (u *userService) SignOut(userSignIn *entities.UserSignIn) (string, error) {
+	var user entities.User
+	if err := u.repo.GetUserFromUserName(&user, userSignIn.UserName); err != nil {
+		return "", entities.ErrorUnAuthorized
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userSignIn.Password)); err != nil {
+		return "", entities.ErrorUnAuthorized
+	}
+	return user.Uid, nil
 }
 
 func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
@@ -116,13 +123,17 @@ func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err := u.repo.SetToRedis(td.AccessToken, uid, at.Sub(now))
+	err := u.repo.SaveJWT(td.AccessToken, uid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.SetToRedis(td.RefreshToken, uid, rt.Sub(now))
+	err = u.repo.SaveJWT(td.RefreshToken, uid, rt.Sub(now))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (u *userService) DeleteAuth(uid string) error {
+	return u.repo.DeleteJWT(uid)
 }

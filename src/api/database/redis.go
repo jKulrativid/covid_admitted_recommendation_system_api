@@ -10,6 +10,7 @@ import (
 type RedisClient interface {
 	Get(key string) (string, error)
 	Set(key, val string, exp time.Duration) error
+	Del(key string) error
 }
 
 type redisClient struct {
@@ -39,4 +40,8 @@ func (r *redisClient) Get(key string) (string, error) {
 
 func (r *redisClient) Set(key, val string, exp time.Duration) error {
 	return r.client.Set(key, val, exp).Err()
+}
+
+func (r *redisClient) Del(key string) error {
+	return r.client.Del(key).Err()
 }

@@ -30,10 +30,10 @@ func NewUserHandler(us services.UserService) UserHandler {
 func (h *userHandler) Register(c echo.Context) error {
 	var newUser entities.UserRegister
 	if err := c.Bind(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	if err := c.Validate(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
@@ -45,22 +45,22 @@ func (h *userHandler) Register(c echo.Context) error {
 func (h *userHandler) SignIn(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	if err := c.Validate(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, entities.ErrorBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	userUuid, err := h.service.SignIn(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, entities.ErrorNotAuthorized)
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 	ts, err := h.service.GenerateToken(userUuid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 	err = h.service.CreateAuth(userUuid, ts)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 	return c.JSON(http.StatusOK, map[string]string{
 		"access_token":  ts.AccessToken,
@@ -69,6 +69,20 @@ func (h *userHandler) SignIn(c echo.Context) error {
 }
 
 func (h *userHandler) SignOut(c echo.Context) error {
+	var user entities.UserSignIn
+	if err := c.Bind(&user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(&user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	uid, err := h.service.SignOut(&user)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+	if err := h.service.DeleteAuth(uid); err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+	}
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
