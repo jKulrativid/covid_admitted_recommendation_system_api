@@ -8,6 +8,7 @@ import (
 
 type AuthMiddleware interface {
 	Auth(next echo.HandlerFunc) echo.HandlerFunc
+	Refresh(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type authMiddleware struct {
@@ -23,7 +24,7 @@ func NewAuthMiddleware(s services.AuthService) AuthMiddleware {
 // TODO fix middleware after change framework from Gin to Echo
 func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		cookie, err := c.Cookie("token")
+		cookie, err := c.Cookie("access-token")
 		c.Set("isAuth", false) // always set isAuth false before authentication
 		if err != nil {
 			return next(c)
@@ -40,4 +41,26 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("uid", uid)
 		return next(c)
 	}
+}
+
+func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		cookie, err := c.Cookie("refresh-token")
+		c.Set("isAuth", false)
+		if err != nil {
+			return next(c)
+		}
+		detail, err := a.service.ExtractMetadata(cookie.Value)
+		if err != nil {
+			return next(c)
+		}
+		uid, err := a.service.FetchAuth(detail)
+		if err != nil {
+			return next(c)
+		}
+		c.Set("isAuth", true)
+		c.Set("uid", uid)
+		return next(c)
+	}
+
 }

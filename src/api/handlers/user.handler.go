@@ -13,7 +13,7 @@ type UserHandler interface {
 	SignIn(c echo.Context) error
 	SignOut(c echo.Context) error
 	RefreshToken(c echo.Context) error
-	UpdateUsername(c echo.Context) error
+	UpdateUserDetail(c echo.Context) error
 	ChangePassword(c echo.Context) error
 }
 
@@ -30,14 +30,14 @@ func NewUserHandler(us services.UserService) UserHandler {
 func (h *userHandler) Register(c echo.Context) error {
 	var newUser entities.UserRegister
 	if err := c.Bind(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err := c.Validate(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
-		return c.JSON(http.StatusConflict, err)
+		return c.JSON(http.StatusConflict, err.Error())
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -45,22 +45,22 @@ func (h *userHandler) Register(c echo.Context) error {
 func (h *userHandler) SignIn(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err := c.Validate(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	userUuid, err := h.service.SignIn(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 	ts, err := h.service.GenerateToken(userUuid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
 	}
 	err = h.service.CreateAuth(userUuid, ts)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
 	}
 	return c.JSON(http.StatusOK, map[string]string{
 		"access_token":  ts.AccessToken,
@@ -71,26 +71,46 @@ func (h *userHandler) SignIn(c echo.Context) error {
 func (h *userHandler) SignOut(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err := c.Validate(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	uid, err := h.service.SignOut(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 	if err := h.service.DeleteAuth(uid); err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
 	}
-	return c.JSON(http.StatusOK, map[string]string{})
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *userHandler) RefreshToken(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]string{})
+	if isAuth := c.Get("isAuth").(bool); !isAuth {
+		return echo.NewHTTPError(http.StatusUnauthorized, entities.ErrorUnAuthorized)
+	}
+	uid, _ := c.Get("uid").(string)
+
+	// delete previous refresh token
+	h.service.DeleteAuth(uid)
+
+	// regenerate access and refresh token
+	ts, err := h.service.GenerateToken(uid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+	}
+	if err := h.service.CreateAuth(uid, ts); err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"access_token":  ts.AccessToken,
+		"refresh_token": ts.RefreshToken,
+	})
 }
 
-func (h *userHandler) UpdateUsername(c echo.Context) error {
+func (h *userHandler) UpdateUserDetail(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 

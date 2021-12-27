@@ -16,7 +16,7 @@ type customValidator struct {
 
 func (cv *customValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
-		return entities.ErrorBadRequest
+		return entities.ErrorInvalidForm
 	}
 	return nil
 }

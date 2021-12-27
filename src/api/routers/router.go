@@ -28,16 +28,12 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 		user.POST("/sign-in", userHandler.SignIn)
 		user.POST("/sign-out", userHandler.SignOut)
 	}
+	user.Use(authMiddleware.Auth)
 
-	r.POST("/refreshtoken", userHandler.RefreshToken)
+	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Refresh)
 
-	userEdit := r.Group("/user-edit")
-	{
-		userEdit.POST("/updata-username", userHandler.UpdateUsername)
-	}
 	r.Validator = services.NewValidateService()
 	r.Use(middleware.Logger())
-	r.Use(authMiddleware.Auth)
 
 	return r
 
