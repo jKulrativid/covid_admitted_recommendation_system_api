@@ -37,7 +37,7 @@ func (h *userHandler) Register(c echo.Context) error {
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusConflict, entities.ErrorConflict)
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -111,9 +111,15 @@ func (h *userHandler) RefreshToken(c echo.Context) error {
 }
 
 func (h *userHandler) UpdateUserDetail(c echo.Context) error {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
+		return echo.ErrUnauthorized
+	}
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
 func (h *userHandler) ChangePassword(c echo.Context) error {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
+		return echo.ErrUnauthorized
+	}
 	return c.JSON(http.StatusOK, map[string]string{})
 }

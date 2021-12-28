@@ -25,7 +25,7 @@ func NewStorageHandler(s services.StorageService) StorageHandler {
 
 // support multiple files upload
 func (h *storageHandler) UploadFiles(c echo.Context) error {
-	if isAuth := c.Get("isAuth").(bool); !isAuth {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
 		return echo.ErrUnauthorized
 	}
 	uploaderUid := c.Get("uid").(string)
@@ -39,7 +39,7 @@ func (h *storageHandler) UploadFiles(c echo.Context) error {
 
 // list all file name
 func (h *storageHandler) ListAllFiles(c echo.Context) error {
-	if isAuth := c.Get("isAuth").(bool); !isAuth {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
 		return echo.ErrUnauthorized
 	}
 	uid := c.Get("uid").(string)
@@ -54,7 +54,7 @@ func (h *storageHandler) ListAllFiles(c echo.Context) error {
 
 // support multiple files delete
 func (h *storageHandler) DeleteFiles(c echo.Context) error {
-	if isAuth := c.Get("isAuth").(bool); !isAuth {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
 		return echo.ErrUnauthorized
 	}
 	uid := c.Get("uid").(string)

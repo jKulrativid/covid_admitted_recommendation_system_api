@@ -47,7 +47,7 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("refresh-token")
-		c.Set("isAuth", false)
+		c.Set("isAuth", "false")
 		if err != nil {
 			return next(c)
 		}
@@ -59,7 +59,7 @@ func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return next(c)
 		}
-		c.Set("isAuth", true)
+		c.Set("isAuth", "true")
 		c.Set("uid", uid)
 		return next(c)
 	}
