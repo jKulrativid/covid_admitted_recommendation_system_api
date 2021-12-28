@@ -30,14 +30,14 @@ func NewUserHandler(us services.UserService) UserHandler {
 func (h *userHandler) Register(c echo.Context) error {
 	var newUser entities.UserRegister
 	if err := c.Bind(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	if err := c.Validate(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
-		return c.JSON(http.StatusConflict, err.Error())
+		return echo.NewHTTPError(http.StatusConflict, entities.ErrorConflict)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -45,14 +45,14 @@ func (h *userHandler) Register(c echo.Context) error {
 func (h *userHandler) SignIn(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	if err := c.Validate(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	userUuid, err := h.service.SignIn(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+		return echo.ErrUnauthorized
 	}
 	ts, err := h.service.GenerateToken(userUuid)
 	if err != nil {
@@ -71,14 +71,14 @@ func (h *userHandler) SignIn(c echo.Context) error {
 func (h *userHandler) SignOut(c echo.Context) error {
 	var user entities.UserSignIn
 	if err := c.Bind(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	if err := c.Validate(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.ErrBadRequest
 	}
 	uid, err := h.service.SignOut(&user)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+		return echo.ErrUnauthorized
 	}
 	if err := h.service.DeleteAuth(uid); err != nil {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
@@ -88,7 +88,7 @@ func (h *userHandler) SignOut(c echo.Context) error {
 
 func (h *userHandler) RefreshToken(c echo.Context) error {
 	if isAuth := c.Get("isAuth").(bool); !isAuth {
-		return echo.NewHTTPError(http.StatusUnauthorized, entities.ErrorUnAuthorized)
+		return echo.ErrUnauthorized
 	}
 	uid, _ := c.Get("uid").(string)
 
@@ -98,10 +98,10 @@ func (h *userHandler) RefreshToken(c echo.Context) error {
 	// regenerate access and refresh token
 	ts, err := h.service.GenerateToken(uid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
 	}
 	if err := h.service.CreateAuth(uid, ts); err != nil {
-		return echo.NewHTTPError(http.StatusUnprocessableEntity, entities.ErrorUnprocessableEntity)
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"covid_admission_api/entities"
 	"covid_admission_api/services"
 	"net/http"
 
@@ -27,17 +26,42 @@ func NewStorageHandler(s services.StorageService) StorageHandler {
 // support multiple files upload
 func (h *storageHandler) UploadFiles(c echo.Context) error {
 	if isAuth := c.Get("isAuth").(bool); !isAuth {
-		return echo.NewHTTPError(http.StatusUnauthorized, entities.ErrorUnAuthorized)
+		return echo.ErrUnauthorized
 	}
-	return nil
+	uploaderUid := c.Get("uid").(string)
+	multiForm, err := c.MultipartForm()
+	if err != nil {
+		return echo.ErrBadRequest
+	}
+	results := h.service.UploadFiles(uploaderUid, multiForm)
+	return c.JSON(http.StatusOK, results)
 }
 
-// list all file to JSON
+// list all file name
 func (h *storageHandler) ListAllFiles(c echo.Context) error {
-	return nil
+	if isAuth := c.Get("isAuth").(bool); !isAuth {
+		return echo.ErrUnauthorized
+	}
+	uid := c.Get("uid").(string)
+	nameList, err := h.service.ListAllFiles(uid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"list": nameList,
+	})
 }
 
 // support multiple files delete
 func (h *storageHandler) DeleteFiles(c echo.Context) error {
-	return nil
+	if isAuth := c.Get("isAuth").(bool); !isAuth {
+		return echo.ErrUnauthorized
+	}
+	uid := c.Get("uid").(string)
+	fileList := []string{}
+	if err := c.Bind(&fileList); err != nil {
+		return echo.ErrBadRequest
+	}
+	results := h.service.DeleteFiles(uid, fileList)
+	return c.JSON(http.StatusOK, results)
 }

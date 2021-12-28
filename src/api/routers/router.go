@@ -22,7 +22,7 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 	userHandler := handlers.NewUserHandler(userService)
 
 	storageRepo := repositories.NewStorageRepository()
-	storageService := services.StorageService(storageRepo)
+	storageService := services.NewStorageService(storageRepo)
 	storageHandler := handlers.NewStorageHandler(storageService)
 
 	r := echo.New()
@@ -42,6 +42,7 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 		storage.GET("/listallfiles", storageHandler.ListAllFiles)
 		storage.POST("/deletefiles", storageHandler.DeleteFiles)
 	}
+	storage.Use(authMiddleware.Auth)
 
 	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Refresh)
 
