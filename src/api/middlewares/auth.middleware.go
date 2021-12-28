@@ -21,7 +21,7 @@ func NewAuthMiddleware(s services.AuthService) AuthMiddleware {
 	}
 }
 
-// TODO fix middleware after change framework from Gin to Echo
+// for authenticating access token
 func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("access-token")
@@ -43,6 +43,7 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+// for authenticating refresh token
 func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("refresh-token")
