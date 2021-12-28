@@ -87,7 +87,7 @@ func (h *userHandler) SignOut(c echo.Context) error {
 }
 
 func (h *userHandler) RefreshToken(c echo.Context) error {
-	if isAuth := c.Get("isAuth").(bool); !isAuth {
+	if isAuth := c.Get("isAuth"); isAuth == nil {
 		return echo.ErrUnauthorized
 	}
 	uid, _ := c.Get("uid").(string)
