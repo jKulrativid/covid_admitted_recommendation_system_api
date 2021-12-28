@@ -21,18 +21,30 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
+	storageRepo := repositories.NewStorageRepository()
+	storageService := services.StorageService(storageRepo)
+	storageHandler := handlers.NewStorageHandler(storageService)
+
 	r := echo.New()
 	user := r.Group("/user")
 	{
 		user.POST("/register", userHandler.Register)
-		user.POST("/sign-in", userHandler.SignIn)
-		user.POST("/sign-out", userHandler.SignOut)
+		user.POST("/signin", userHandler.SignIn)
+		user.POST("/signout", userHandler.SignOut)
+		user.POST("/updateuserdetail", userHandler.UpdateUserDetail)
+		user.POST("/changepassword", userHandler.ChangePassword)
 	}
 	user.Use(authMiddleware.Auth)
 
+	storage := r.Group("/storage")
+	{
+		storage.POST("/uploadfiles", storageHandler.UploadFiles)
+		storage.GET("/listallfiles", storageHandler.ListAllFiles)
+		storage.POST("/deletefiles", storageHandler.DeleteFiles)
+	}
+
 	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Refresh)
 
-	r.Validator = services.NewValidateService()
 	r.Use(middleware.Logger())
 
 	return r

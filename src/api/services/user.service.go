@@ -7,12 +7,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
+	Validate(u interface{}) error
 	Register(newUser *entities.UserRegister) error
 	SignIn(user *entities.UserSignIn) (string, error)
 	SignOut(user *entities.UserSignIn) (string, error)
@@ -23,19 +25,23 @@ type UserService interface {
 }
 
 type userService struct {
-	repo     repositories.UserRepository
-	atSecret string
-	rtSecret string
+	repo      repositories.UserRepository
+	validator *validator.Validate
+	atSecret  string
+	rtSecret  string
 }
 
 func NewUserService(r repositories.UserRepository) UserService {
-	ass := os.Getenv("ACCESS_JWT_SECRET")
-	rfs := os.Getenv("REFRESH_JWT_SECRET")
-	if ass == "" || rfs == "" {
+	as := os.Getenv("ACCESS_JWT_SECRET")
+	rs := os.Getenv("REFRESH_JWT_SECRET")
+	if as == "" || rs == "" {
 		log.Fatal("Crashed in NewUserService (user.service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
 	}
 	return &userService{
-		repo: r,
+		repo:      r,
+		validator: validator.New(),
+		atSecret:  as,
+		rtSecret:  rs,
 	}
 }
 
@@ -136,4 +142,11 @@ func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 
 func (u *userService) DeleteAuth(uid string) error {
 	return u.repo.DeleteJWT(uid)
+}
+
+func (u *userService) Validate(i interface{}) error {
+	if err := u.validator.Struct(i); err != nil {
+		return entities.ErrorInvalidUserForm
+	}
+	return nil
 }

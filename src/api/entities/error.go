@@ -12,7 +12,7 @@ var (
 	ErrorInternalServer      = errors.New("internal server error")
 
 	// validate error
-	ErrorInvalidForm = errors.New("invalid form of data")
+	ErrorInvalidUserForm = errors.New("invalid form of data")
 
 	// jwt token error
 	ErrorInvalildToken = errors.New("token invalid")
