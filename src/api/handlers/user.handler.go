@@ -32,8 +32,8 @@ func (h *userHandler) Register(c echo.Context) error {
 	if err := c.Bind(&newUser); err != nil {
 		return echo.ErrBadRequest
 	}
-	if err := c.Validate(&newUser); err != nil {
-		return echo.ErrBadRequest
+	if err := h.service.Validate(newUser); err != nil {
+		return echo.NewHTTPError(http.StatusBadGateway, err.Error())
 	}
 	err := h.service.Register(&newUser)
 	if err != nil {
@@ -47,8 +47,8 @@ func (h *userHandler) SignIn(c echo.Context) error {
 	if err := c.Bind(&user); err != nil {
 		return echo.ErrBadRequest
 	}
-	if err := c.Validate(&user); err != nil {
-		return echo.ErrBadRequest
+	if err := h.service.Validate(&user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	userUuid, err := h.service.SignIn(&user)
 	if err != nil {
@@ -73,8 +73,8 @@ func (h *userHandler) SignOut(c echo.Context) error {
 	if err := c.Bind(&user); err != nil {
 		return echo.ErrBadRequest
 	}
-	if err := c.Validate(&user); err != nil {
-		return echo.ErrBadRequest
+	if err := h.service.Validate(&user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	uid, err := h.service.SignOut(&user)
 	if err != nil {
