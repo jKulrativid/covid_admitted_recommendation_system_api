@@ -1,6 +1,8 @@
 package repositories
 
-import "covid_admission_api/database"
+import (
+	"covid_admission_api/database"
+)
 
 type AuthRepo interface {
 	GetFromClient(key string) (string, error)
@@ -17,5 +19,9 @@ func NewAuthRepo(rs database.RedisClient) AuthRepo {
 }
 
 func (a *authRepo) GetFromClient(key string) (string, error) {
-	return a.redis.Get(key)
+	result, err := a.redis.Get(key)
+	if err != nil {
+		return "", err
+	}
+	return result, nil
 }

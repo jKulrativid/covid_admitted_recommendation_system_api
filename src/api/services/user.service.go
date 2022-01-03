@@ -129,11 +129,11 @@ func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err := u.repo.SaveJWT(td.AccessToken, uid, at.Sub(now))
+	err := u.repo.SaveJWT(td.AccessUuid, uid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.SaveJWT(td.RefreshToken, uid, rt.Sub(now))
+	err = u.repo.SaveJWT(td.RefreshUuid, uid, rt.Sub(now))
 	if err != nil {
 		return err
 	}

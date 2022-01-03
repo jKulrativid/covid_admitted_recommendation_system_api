@@ -87,10 +87,10 @@ func (h *userHandler) SignOut(c echo.Context) error {
 }
 
 func (h *userHandler) RefreshToken(c echo.Context) error {
-	if isAuth := c.Get("isAuth"); isAuth == nil {
+	uid, isAuth := c.Get("uid").(string)
+	if !isAuth {
 		return echo.ErrUnauthorized
 	}
-	uid, _ := c.Get("uid").(string)
 
 	// delete previous refresh token
 	h.service.DeleteAuth(uid)

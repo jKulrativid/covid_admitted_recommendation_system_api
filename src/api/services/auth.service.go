@@ -5,7 +5,6 @@ import (
 	"covid_admission_api/repositories"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -50,17 +49,8 @@ func NewAuthService(r repositories.AuthRepo) AuthService {
 	}
 }
 
-func (a *authService) ExtractToken(jwtToken string) string {
-	strArr := strings.Split(jwtToken, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
-	}
-	return ""
-}
-
 func (a *authService) VerifyToken(jwtToken string) (*jwt.Token, error) {
-	tokenString := a.ExtractToken(jwtToken)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, entities.ErrorInvalildToken
 		}

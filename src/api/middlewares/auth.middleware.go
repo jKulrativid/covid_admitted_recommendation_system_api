@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"covid_admission_api/services"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 )
@@ -24,11 +25,8 @@ func NewAuthMiddleware(s services.AuthService) AuthMiddleware {
 // for authenticating access token
 func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		cookie, err := c.Cookie("access-token")
-		if err != nil {
-			return next(c)
-		}
-		accessDetail, err := a.service.ExtractMetadata(cookie.Value)
+		token := c.Request().Header.Get("Authorization")
+		accessDetail, err := a.service.ExtractMetadata(token)
 		if err != nil {
 			return next(c)
 		}
@@ -37,6 +35,7 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 		c.Set("uid", uid)
+		fmt.Println(uid)
 		return next(c)
 	}
 }
@@ -44,11 +43,8 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 // for authenticating refresh token
 func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		cookie, err := c.Cookie("refresh-token")
-		if err != nil {
-			return echo.ErrUnauthorized
-		}
-		detail, err := a.service.ExtractMetadata(cookie.Value)
+		token := c.Request().Header.Get("Authorization")
+		detail, err := a.service.ExtractMetadata(token)
 		if err != nil {
 			return echo.ErrUnauthorized
 		}

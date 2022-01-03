@@ -27,7 +27,7 @@ func NewStorageService(r repositories.StorageRepository) StorageService {
 
 // this service upload one file at a time
 func (s *storageService) uploadFile(f *entities.UploadFile) error {
-	if err := s.ValidateFileType(f); err != nil {
+	if err := s.validateFileType(f); err != nil {
 		return err
 	}
 	if err := s.repo.UploadFile(f); err != nil {
@@ -82,7 +82,7 @@ func (s *storageService) DeleteFiles(uid string, fileList []string) map[string]s
 	return results
 }
 
-func (s *storageService) ValidateFileType(f *entities.UploadFile) error {
+func (s *storageService) validateFileType(f *entities.UploadFile) error {
 	fileType := strings.Split(f.FileHeader.Filename, ".")[1]
 	if !entities.AllowedFileType[fileType] {
 		return entities.ErrorUnsupportedMediaType
