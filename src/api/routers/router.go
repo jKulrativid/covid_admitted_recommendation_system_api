@@ -45,7 +45,6 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 	storage.Use(authMiddleware.Auth)
 
 	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Refresh)
-
 	r.Use(middleware.Logger())
 
 	return r

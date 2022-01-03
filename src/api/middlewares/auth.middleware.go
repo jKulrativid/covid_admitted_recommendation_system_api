@@ -25,7 +25,6 @@ func NewAuthMiddleware(s services.AuthService) AuthMiddleware {
 func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("access-token")
-		c.Set("isAuth", false) // always set isAuth false before authentication
 		if err != nil {
 			return next(c)
 		}
@@ -37,7 +36,6 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return next(c)
 		}
-		c.Set("isAuth", true)
 		c.Set("uid", uid)
 		return next(c)
 	}
@@ -47,19 +45,17 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 func (a *authMiddleware) Refresh(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("refresh-token")
-		c.Set("isAuth", "false")
 		if err != nil {
-			return next(c)
+			return echo.ErrUnauthorized
 		}
 		detail, err := a.service.ExtractMetadata(cookie.Value)
 		if err != nil {
-			return next(c)
+			return echo.ErrUnauthorized
 		}
 		uid, err := a.service.FetchAuth(detail)
 		if err != nil {
-			return next(c)
+			return echo.ErrUnauthorized
 		}
-		c.Set("isAuth", "true")
 		c.Set("uid", uid)
 		return next(c)
 	}
