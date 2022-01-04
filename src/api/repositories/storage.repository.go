@@ -4,7 +4,6 @@ import (
 	"covid_admission_api/entities"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -24,33 +23,33 @@ func NewStorageRepository() StorageRepository {
 	if storagePath == "" {
 		storagePath = "storage"
 	}
-	exist, err := exists(storagePath)
-	if err != nil {
-		log.Fatal("Crashed at NewStorageRepository (storage.repository.go) : something went wrong when checking existence of storageDir")
-	} else if !exist {
-		if err := os.Mkdir(storagePath, 0777); err != nil {
-			log.Fatal("Crashed at NewStorageRepository (storage.repository.go) : cannot create storage directory")
-		}
+	if err := os.MkdirAll(storagePath, 0777); err != nil {
+		panic(err)
 	}
 	return &storageRepository{storagePath: storagePath}
 }
 
 func (r *storageRepository) UploadFile(f *entities.UploadFile) error {
+	dstPath := filepath.Join(r.storagePath, f.UploaderUid, f.FileHeader.Filename)
+	if isExist, err := r.exists(dstPath); err != nil {
+		return entities.ErrorInternalServer
+	} else if isExist {
+		return entities.ErrorConflict
+	}
 	src, err := f.FileHeader.Open()
 	if err != nil {
 		return entities.ErrorUnprocessableEntity
 	}
 	defer src.Close()
 
-	dstPath := filepath.Join(r.storagePath, f.UploaderUid, f.FileHeader.Filename)
 	dst, err := os.Create(dstPath)
 	if err != nil {
-		return entities.ErrorUnprocessableEntity
+		return entities.ErrorInternalServer
 	}
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, src); err != nil {
-		return entities.ErrorUnprocessableEntity
+		return entities.ErrorInternalServer
 	}
 	return nil
 }
@@ -69,7 +68,7 @@ func (r *storageRepository) ListAllFileNames(uid string) ([]string, error) {
 
 func (r *storageRepository) DeleteFile(uid string, fileName string) error {
 	filePath := filepath.Join(r.storagePath, uid, fileName)
-	exist, err := exists(filePath)
+	exist, err := r.exists(filePath)
 	if err != nil {
 		return entities.ErrorUnprocessableEntity
 	}
@@ -82,7 +81,7 @@ func (r *storageRepository) DeleteFile(uid string, fileName string) error {
 	return nil
 }
 
-func exists(path string) (bool, error) {
+func (r *storageRepository) exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
