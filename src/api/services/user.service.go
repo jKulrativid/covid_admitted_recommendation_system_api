@@ -27,21 +27,18 @@ type UserService interface {
 type userService struct {
 	repo      repositories.UserRepository
 	validator *validator.Validate
-	atSecret  string
-	rtSecret  string
+	jwtSecret string
 }
 
 func NewUserService(r repositories.UserRepository) UserService {
-	as := os.Getenv("ACCESS_JWT_SECRET")
-	rs := os.Getenv("REFRESH_JWT_SECRET")
-	if as == "" || rs == "" {
-		log.Fatal("Crashed in NewUserService (user.service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+	sc := os.Getenv("JWT_SECRET")
+	if sc == "" {
+		log.Fatal("no environment Variable \"JWT_SECRET\" given")
 	}
 	return &userService{
 		repo:      r,
 		validator: validator.New(),
-		atSecret:  as,
-		rtSecret:  rs,
+		jwtSecret: sc,
 	}
 }
 
@@ -66,7 +63,13 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	return u.repo.CreateNewUser(user)
+	if err := u.repo.CreateNewUser(user); err != nil {
+		return err
+	}
+	if err := u.repo.CreateNewUserDirectory(user.Uid); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
@@ -102,22 +105,20 @@ func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
 	td.RefreshUuid = uuid.NewV4().String()
 
 	atClaims := jwt.MapClaims{}
-	atClaims["authorized"] = true
-	atClaims["access_uuid"] = td.AccessUuid
+	atClaims["token_uuid"] = td.AccessUuid
 	atClaims["user_uuid"] = userUuid
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(u.atSecret))
+	td.AccessToken, err = at.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return nil, err
-
 	}
 	rtClaims := jwt.MapClaims{}
-	rtClaims["refresh_uuid"] = td.RefreshUuid
+	rtClaims["token_uuid"] = td.RefreshUuid
 	rtClaims["user_uuid"] = userUuid
 	rtClaims["exp"] = td.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(u.rtSecret))
+	td.RefreshToken, err = rt.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"covid_admission_api/services"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -58,10 +60,15 @@ func (h *storageHandler) DeleteFiles(c echo.Context) error {
 	if !isAuth {
 		return echo.ErrUnauthorized
 	}
-	files := make([]string, 0)
-	if err := c.Bind(files); err != nil {
+
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
 		return echo.ErrBadRequest
 	}
-	results := h.service.DeleteFiles(uid, files)
+	var deleteList []string
+	if err := json.Unmarshal(body, &deleteList); err != nil {
+		return echo.ErrBadRequest
+	}
+	results := h.service.DeleteFiles(uid, deleteList)
 	return c.JSON(http.StatusOK, results)
 }

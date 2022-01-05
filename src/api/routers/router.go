@@ -42,7 +42,7 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 		storage.POST("/deletefiles", storageHandler.DeleteFiles)
 	}
 
-	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Refresh)
+	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Auth)
 	r.Use(middleware.Logger())
 
 	return r

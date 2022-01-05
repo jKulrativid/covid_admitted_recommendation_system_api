@@ -32,7 +32,7 @@ func (h *userHandler) Register(c echo.Context) error {
 	if err := c.Bind(&newUser); err != nil {
 		return echo.ErrBadRequest
 	}
-	if err := h.service.Validate(newUser); err != nil {
+	if err := h.service.Validate(&newUser); err != nil {
 		return echo.NewHTTPError(http.StatusBadGateway, err.Error())
 	}
 	err := h.service.Register(&newUser)

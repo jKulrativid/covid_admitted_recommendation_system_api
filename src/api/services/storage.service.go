@@ -11,7 +11,7 @@ type StorageService interface {
 	UploadFiles(uid string, mf *multipart.Form) map[string]string
 	uploadFile(f *entities.UploadFile) error
 	ListAllFiles(uid string) ([]string, error)
-	DeleteFiles(uid string, fileList []string) map[string]string
+	DeleteFiles(uid string, deleteList []string) map[string]string
 	deleteFile(uid string, fileName string) error
 }
 
@@ -70,9 +70,9 @@ func (s *storageService) deleteFile(uid string, fileName string) error {
 	return nil
 }
 
-func (s *storageService) DeleteFiles(uid string, fileList []string) map[string]string {
-	results := make(map[string]string, len(fileList))
-	for _, fileName := range fileList {
+func (s *storageService) DeleteFiles(uid string, deleteList []string) map[string]string {
+	results := make(map[string]string, len(deleteList))
+	for _, fileName := range deleteList {
 		deleteResult := entities.StatusDeleteSuccess
 		if err := s.deleteFile(uid, fileName); err != nil {
 			deleteResult = err.Error()

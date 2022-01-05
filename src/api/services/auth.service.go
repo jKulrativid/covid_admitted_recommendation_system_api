@@ -10,16 +10,13 @@ import (
 )
 
 type AuthService interface {
-	VerifyToken(jwtToken string) (*jwt.Token, error)
-	TokenValid(jwtToken string) error
 	ExtractMetadata(jwtToken string) (*AccessDetails, error)
 	FetchAuth(authD *AccessDetails) (string, error)
 }
 
 type authService struct {
-	repo     repositories.AuthRepo
-	atSecret string
-	rtSecret string
+	repo      repositories.AuthRepo
+	jwtSecret string
 }
 
 type TokenDetail struct {
@@ -32,56 +29,42 @@ type TokenDetail struct {
 }
 
 type AccessDetails struct {
-	AccessUuid string
-	UserUuid   string
+	TokenUuid string
+	UserUuid  string
 }
 
 func NewAuthService(r repositories.AuthRepo) AuthService {
-	as := os.Getenv("ACCESS_JWT_SECRET")
-	rs := os.Getenv("REFRESH_JWT_SECRET")
-	if as == "" || rs == "" {
-		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+	sc := os.Getenv("JWT_SECRET")
+	if sc == "" {
+		log.Fatal("no environment Variable \"JWT_SECRET\" given")
 	}
 	return &authService{
-		repo:     r,
-		atSecret: as,
-		rtSecret: rs,
+		repo:      r,
+		jwtSecret: sc,
 	}
 }
 
-func (a *authService) VerifyToken(jwtToken string) (*jwt.Token, error) {
+func (a *authService) verifyToken(jwtToken string) (*jwt.Token, error) {
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, entities.ErrorInvalildToken
 		}
-		return []byte(a.atSecret), nil
+		return []byte(a.jwtSecret), nil
 	})
 	if err != nil {
 		return nil, entities.ErrorExpiredToken
 	}
 	return token, nil
-
-}
-
-func (a *authService) TokenValid(jwtToken string) error {
-	token, err := a.VerifyToken(jwtToken)
-	if err != nil {
-		return err
-	}
-	if !token.Valid {
-		return entities.ErrorInvalildToken
-	}
-	return nil
 }
 
 func (a *authService) ExtractMetadata(jwtToken string) (*AccessDetails, error) {
-	token, err := a.VerifyToken(jwtToken)
+	token, err := a.verifyToken(jwtToken)
 	if err != nil {
 		return nil, err
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		accessUuid, ok := claims["access_uuid"].(string)
+		tokenUuid, ok := claims["token_uuid"].(string)
 		if !ok {
 			return nil, entities.ErrorInvalildToken
 		}
@@ -90,15 +73,15 @@ func (a *authService) ExtractMetadata(jwtToken string) (*AccessDetails, error) {
 			return nil, entities.ErrorInvalildToken
 		}
 		return &AccessDetails{
-			AccessUuid: accessUuid,
-			UserUuid:   uuid,
+			TokenUuid: tokenUuid,
+			UserUuid:  uuid,
 		}, nil
 	}
 	return nil, entities.ErrorInvalildToken
 }
 
 func (a *authService) FetchAuth(authD *AccessDetails) (string, error) {
-	uid, err := a.repo.GetFromClient(authD.AccessUuid)
+	uid, err := a.repo.GetFromClient(authD.TokenUuid)
 	if err != nil {
 		return "", err
 	}

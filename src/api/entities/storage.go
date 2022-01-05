@@ -7,6 +7,10 @@ type UploadFile struct {
 	FileHeader  *multipart.FileHeader
 }
 
+type DeleteFileList struct {
+	List []interface{} `json:"list"`
+}
+
 const (
 	StatusUploadSuccess = "upload sucessfully"
 	StatusDeleteSuccess = "delete sucessfully"
