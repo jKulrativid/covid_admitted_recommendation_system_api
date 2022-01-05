@@ -16,13 +16,11 @@ func main() {
 	err = godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
-
 	}
 	// setup SQL DB
 	db, err := database.NewDatabase()
 	if err != nil {
 		log.Fatal(err)
-
 	}
 	defer db.Close()
 	db.AutoMigrate()
@@ -31,9 +29,10 @@ func main() {
 	redisClient, err := database.NewRedisClient()
 	if err != nil {
 		log.Fatal(err)
-
 	}
+
 	server := routers.NewRouter(db, redisClient)
+	godotenv.Load("reset.env") // reset env variable
 	server.Start(":8080")
 
 }

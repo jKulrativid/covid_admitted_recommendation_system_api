@@ -1,26 +1,22 @@
 package services
 
 import (
+	"covid_admission_api/entities"
 	"covid_admission_api/repositories"
-	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
 type AuthService interface {
-	VerifyToken(jwtToken string) (*jwt.Token, error)
-	TokenValid(jwtToken string) error
 	ExtractMetadata(jwtToken string) (*AccessDetails, error)
 	FetchAuth(authD *AccessDetails) (string, error)
 }
 
 type authService struct {
-	repo     repositories.AuthRepo
-	atSecret string
-	rtSecret string
+	repo      repositories.AuthRepo
+	jwtSecret string
 }
 
 type TokenDetail struct {
@@ -33,84 +29,61 @@ type TokenDetail struct {
 }
 
 type AccessDetails struct {
-	AccessUuid string
-	UserUuid   string
+	TokenUuid string
+	UserUuid  string
 }
 
 func NewAuthService(r repositories.AuthRepo) AuthService {
-	as := os.Getenv("ACCESS_JWT_SECRET")
-	rs := os.Getenv("REFRESH_JWT_SECRET")
-	if as == "" || rs == "" {
-		log.Fatal("Crashed in NewJWTService (jwt_service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+	sc := os.Getenv("JWT_SECRET")
+	if sc == "" {
+		log.Fatal("no environment Variable \"JWT_SECRET\" given")
 	}
 	return &authService{
-		repo:     r,
-		atSecret: as,
-		rtSecret: rs,
+		repo:      r,
+		jwtSecret: sc,
 	}
 }
 
-func (a *authService) ExtractToken(jwtToken string) string {
-	strArr := strings.Split(jwtToken, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
-	}
-	return ""
-}
-
-func (a *authService) VerifyToken(jwtToken string) (*jwt.Token, error) {
-	tokenString := a.ExtractToken(jwtToken)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func (a *authService) verifyToken(jwtToken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, entities.ErrorInvalildToken
 		}
-		return []byte(a.atSecret), nil
+		return []byte(a.jwtSecret), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, entities.ErrorExpiredToken
 	}
 	return token, nil
-
-}
-
-func (a *authService) TokenValid(jwtToken string) error {
-	token, err := a.VerifyToken(jwtToken)
-	if err != nil {
-		return err
-	}
-	if !token.Valid {
-		return fmt.Errorf("invalid token")
-	}
-	return nil
 }
 
 func (a *authService) ExtractMetadata(jwtToken string) (*AccessDetails, error) {
-	token, err := a.VerifyToken(jwtToken)
+	token, err := a.verifyToken(jwtToken)
 	if err != nil {
 		return nil, err
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		accessUuid, ok := claims["access_uuid"].(string)
+		tokenUuid, ok := claims["token_uuid"].(string)
 		if !ok {
-			return nil, fmt.Errorf("token payload invalid")
+			return nil, entities.ErrorInvalildToken
 		}
 		uuid, ok := claims["user_uuid"].(string)
 		if !ok {
-			return nil, fmt.Errorf("token payload invalid")
+			return nil, entities.ErrorInvalildToken
 		}
 		return &AccessDetails{
-			AccessUuid: accessUuid,
-			UserUuid:   uuid,
+			TokenUuid: tokenUuid,
+			UserUuid:  uuid,
 		}, nil
 	}
-	return nil, err
+	return nil, entities.ErrorInvalildToken
 }
 
 func (a *authService) FetchAuth(authD *AccessDetails) (string, error) {
-	uuid, err := a.repo.GetFromClient(authD.AccessUuid)
+	uid, err := a.repo.GetFromClient(authD.TokenUuid)
 	if err != nil {
 		return "", err
 	}
-	return uuid, nil
+	return uid, nil
 }

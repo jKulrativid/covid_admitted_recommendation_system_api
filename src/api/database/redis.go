@@ -34,14 +34,24 @@ func NewRedisClient() (RedisClient, error) {
 }
 
 func (r *redisClient) Get(key string) (string, error) {
-	result := r.client.Get(key)
-	return result.String(), result.Err()
+	result, err := r.client.Get(key).Result()
+	if err != nil {
+		return "", err
+	}
+	return result, nil
 }
 
 func (r *redisClient) Set(key, val string, exp time.Duration) error {
-	return r.client.Set(key, val, exp).Err()
+	_, err := r.client.Set(key, val, exp).Result()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *redisClient) Del(key string) error {
-	return r.client.Del(key).Err()
+	if err := r.client.Del(key).Err(); err != redis.Nil {
+		return err
+	}
+	return nil
 }

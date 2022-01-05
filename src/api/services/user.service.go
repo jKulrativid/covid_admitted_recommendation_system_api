@@ -7,12 +7,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
+	Validate(u interface{}) error
 	Register(newUser *entities.UserRegister) error
 	SignIn(user *entities.UserSignIn) (string, error)
 	SignOut(user *entities.UserSignIn) (string, error)
@@ -23,19 +25,20 @@ type UserService interface {
 }
 
 type userService struct {
-	repo     repositories.UserRepository
-	atSecret string
-	rtSecret string
+	repo      repositories.UserRepository
+	validator *validator.Validate
+	jwtSecret string
 }
 
 func NewUserService(r repositories.UserRepository) UserService {
-	ass := os.Getenv("ACCESS_JWT_SECRET")
-	rfs := os.Getenv("REFRESH_JWT_SECRET")
-	if ass == "" || rfs == "" {
-		log.Fatal("Crashed in NewUserService (user.service.go) : No Environment Variable \"ACCESS_JWT_SECRET\" or \"REFRESH_JWT_SECRET\" Given")
+	sc := os.Getenv("JWT_SECRET")
+	if sc == "" {
+		log.Fatal("no environment Variable \"JWT_SECRET\" given")
 	}
 	return &userService{
-		repo: r,
+		repo:      r,
+		validator: validator.New(),
+		jwtSecret: sc,
 	}
 }
 
@@ -60,7 +63,13 @@ func (u *userService) Register(newUser *entities.UserRegister) error {
 		Email:          newUser.Email,
 		HashedPassword: string(hashedPassword),
 	}
-	return u.repo.CreateNewUser(user)
+	if err := u.repo.CreateNewUser(user); err != nil {
+		return err
+	}
+	if err := u.repo.CreateNewUserDirectory(user.Uid); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *userService) SignIn(userSignIn *entities.UserSignIn) (string, error) {
@@ -96,22 +105,20 @@ func (u *userService) GenerateToken(userUuid string) (*TokenDetail, error) {
 	td.RefreshUuid = uuid.NewV4().String()
 
 	atClaims := jwt.MapClaims{}
-	atClaims["authorized"] = true
-	atClaims["access_uuid"] = td.AccessUuid
+	atClaims["token_uuid"] = td.AccessUuid
 	atClaims["user_uuid"] = userUuid
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(u.atSecret))
+	td.AccessToken, err = at.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return nil, err
-
 	}
 	rtClaims := jwt.MapClaims{}
-	rtClaims["refresh_uuid"] = td.RefreshUuid
+	rtClaims["token_uuid"] = td.RefreshUuid
 	rtClaims["user_uuid"] = userUuid
 	rtClaims["exp"] = td.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(u.rtSecret))
+	td.RefreshToken, err = rt.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -123,11 +130,11 @@ func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	err := u.repo.SaveJWT(td.AccessToken, uid, at.Sub(now))
+	err := u.repo.SaveJWT(td.AccessUuid, uid, at.Sub(now))
 	if err != nil {
 		return err
 	}
-	err = u.repo.SaveJWT(td.RefreshToken, uid, rt.Sub(now))
+	err = u.repo.SaveJWT(td.RefreshUuid, uid, rt.Sub(now))
 	if err != nil {
 		return err
 	}
@@ -136,4 +143,11 @@ func (u *userService) CreateAuth(uid string, td *TokenDetail) error {
 
 func (u *userService) DeleteAuth(uid string) error {
 	return u.repo.DeleteJWT(uid)
+}
+
+func (u *userService) Validate(i interface{}) error {
+	if err := u.validator.Struct(i); err != nil {
+		return entities.ErrorInvalidUserForm
+	}
+	return nil
 }

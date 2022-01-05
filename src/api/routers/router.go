@@ -21,23 +21,29 @@ func NewRouter(db database.Database, rs database.RedisClient) *echo.Echo {
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
+	storageRepo := repositories.NewStorageRepository()
+	storageService := services.NewStorageService(storageRepo)
+	storageHandler := handlers.NewStorageHandler(storageService)
+
 	r := echo.New()
-	user := r.Group("/user")
+	user := r.Group("/user", authMiddleware.Auth)
 	{
 		user.POST("/register", userHandler.Register)
-		user.POST("/sign-in", userHandler.SignIn)
-		user.POST("/sign-out", userHandler.SignOut)
+		user.POST("/signin", userHandler.SignIn)
+		user.POST("/signout", userHandler.SignOut)
+		user.POST("/updateuserdetail", userHandler.UpdateUserDetail)
+		user.POST("/changepassword", userHandler.ChangePassword)
 	}
 
-	r.POST("/refreshtoken", userHandler.RefreshToken)
-
-	userEdit := r.Group("/user-edit")
+	storage := r.Group("/storage", authMiddleware.Auth)
 	{
-		userEdit.POST("/updata-username", userHandler.UpdateUsername)
+		storage.POST("/uploadfiles", storageHandler.UploadFiles)
+		storage.GET("/listallfiles", storageHandler.ListAllFiles)
+		storage.POST("/deletefiles", storageHandler.DeleteFiles)
 	}
-	r.Validator = services.NewValidateService()
+
+	r.POST("/refreshtoken", userHandler.RefreshToken, authMiddleware.Auth)
 	r.Use(middleware.Logger())
-	r.Use(authMiddleware.Auth)
 
 	return r
 

@@ -20,15 +20,11 @@ func NewAuthMiddleware(s services.AuthService) AuthMiddleware {
 	}
 }
 
-// TODO fix middleware after change framework from Gin to Echo
+// for authenticating access token
 func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		cookie, err := c.Cookie("token")
-		c.Set("isAuth", false) // always set isAuth false before authentication
-		if err != nil {
-			return next(c)
-		}
-		accessDetail, err := a.service.ExtractMetadata(cookie.Value)
+		token := c.Request().Header.Get("Authorization")
+		accessDetail, err := a.service.ExtractMetadata(token)
 		if err != nil {
 			return next(c)
 		}
@@ -36,7 +32,6 @@ func (a *authMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return next(c)
 		}
-		c.Set("isAuth", true)
 		c.Set("uid", uid)
 		return next(c)
 	}
